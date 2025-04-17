@@ -30,4 +30,7 @@ void add_to_history(const char *command);
 void show_history(void);
 void setup_signals(void);
 
+int is_builtin(const char *cmd);
+int execute_builtin(Command *command);
+
 #endif

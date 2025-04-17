@@ -1,5 +1,38 @@
 #include "shell.h"
 
+int is_builtin(const char *cmd) {
+    return (strcmp(cmd, "history") == 0 || 
+            strcmp(cmd, "exit") == 0 || 
+            strcmp(cmd, "cd") == 0);
+}
+
+int execute_builtin(Command *command) {
+    if (strcmp(command->args[0], "history") == 0) {
+        show_history();
+        return 1;
+    }
+    else if (strcmp(command->args[0], "exit") == 0) {
+        exit(EXIT_SUCCESS);
+    }
+    else if (strcmp(command->args[0], "cd") == 0) {
+        if (command->args[1] == NULL) {
+            // If no argument is provided, change to HOME directory
+            char *home = getenv("HOME");
+            if (home == NULL || chdir(home) < 0) {
+                perror("cd");
+                return 1;
+            }
+        } else {
+            if (chdir(command->args[1]) < 0) {
+                perror("cd");
+                return 1;
+            }
+        }
+        return 1;
+    }
+    return 0;
+}
+
 int execute_commands(Command **commands, int num_commands) {
     int i;
     int prev_pipe_read = -1;
@@ -19,6 +52,12 @@ int execute_commands(Command **commands, int num_commands) {
         }
 
         if (pid == 0) {  // Child process
+            // Add this check before execvp
+            if (is_builtin(commands[i]->args[0])) {
+                execute_builtin(commands[i]);
+                exit(EXIT_SUCCESS);
+            }
+
             // Handle input redirection
             if (commands[i]->input_file) {
                 int fd = open(commands[i]->input_file, O_RDONLY);

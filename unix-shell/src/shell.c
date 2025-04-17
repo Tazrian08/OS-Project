@@ -44,6 +44,9 @@ void shell_loop(void) {
         line = read_line();
         if (!line) continue;
 
+        // Add command to history before processing
+        add_to_history(line);
+
         // Handle built-in exit command
         if (strcmp(line, "exit") == 0) {
             free(line);
