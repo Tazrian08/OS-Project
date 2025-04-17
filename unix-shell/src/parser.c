@@ -34,7 +34,32 @@ Command **parse_line(char *line, int *num_commands) {
                     // Parse individual command tokens
                     token = strtok_r(and_cmd, " \t", &saveptr3);
                     while (token != NULL) {
-                        cmd->args[arg_count++] = strdup(token);
+                        if (strcmp(token, "<") == 0) {
+                            // Input redirection
+                            token = strtok_r(NULL, " \t", &saveptr3);
+                            if (token != NULL) {
+                                cmd->input_file = strdup(token);
+                            }
+                        }
+                        else if (strcmp(token, ">") == 0) {
+                            // Output redirection
+                            token = strtok_r(NULL, " \t", &saveptr3);
+                            if (token != NULL) {
+                                cmd->output_file = strdup(token);
+                                cmd->append_output = 0;
+                            }
+                        }
+                        else if (strcmp(token, ">>") == 0) {
+                            // Append output redirection
+                            token = strtok_r(NULL, " \t", &saveptr3);
+                            if (token != NULL) {
+                                cmd->output_file = strdup(token);
+                                cmd->append_output = 1;
+                            }
+                        }
+                        else {
+                            cmd->args[arg_count++] = strdup(token);
+                        }
                         token = strtok_r(NULL, " \t", &saveptr3);
                     }
                     cmd->args[arg_count] = NULL;
