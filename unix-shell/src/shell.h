@@ -19,6 +19,7 @@ typedef struct {
     char *output_file;     // Output redirection file
     int append_output;     // Flag for append output (>>)
     int pipe_to_next;      // Flag for piping to next command
+    int wait_for_previous; // Flag for && operator
 } Command;
 
 // Function declarations

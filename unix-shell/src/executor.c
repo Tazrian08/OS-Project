@@ -36,8 +36,20 @@ int execute_builtin(Command *command) {
 int execute_commands(Command **commands, int num_commands) {
     int i;
     int prev_pipe_read = -1;
+    int last_status = 0;  // Track exit status for && operator
 
     for (i = 0; i < num_commands; i++) {
+        // Skip command if previous && command failed
+        if (commands[i]->wait_for_previous && last_status != 0) {
+            continue;
+        }
+
+        // Handle built-in commands in parent process
+        if (is_builtin(commands[i]->args[0])) {
+            last_status = execute_builtin(commands[i]);
+            continue;
+        }
+
         int pipe_fds[2];
         
         if (commands[i]->pipe_to_next && pipe(pipe_fds) < 0) {
@@ -52,12 +64,6 @@ int execute_commands(Command **commands, int num_commands) {
         }
 
         if (pid == 0) {  // Child process
-            // Add this check before execvp
-            if (is_builtin(commands[i]->args[0])) {
-                execute_builtin(commands[i]);
-                exit(EXIT_SUCCESS);
-            }
-
             // Handle input redirection
             if (commands[i]->input_file) {
                 int fd = open(commands[i]->input_file, O_RDONLY);
@@ -112,7 +118,9 @@ int execute_commands(Command **commands, int num_commands) {
         }
 
         if (!commands[i]->pipe_to_next) {
-            waitpid(pid, NULL, 0);
+            int status;
+            waitpid(pid, &status, 0);
+            last_status = WEXITSTATUS(status);
         }
     }
 
